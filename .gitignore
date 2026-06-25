@@ -1,34 +1,13 @@
-Chroma vector store
-
 chroma_ui_db/
 chroma_db/
-
-Feedback database
-
 feedback.db
-
-Fine‑tuned model
-
 finetuned-embedding/
-
-Uploaded files
-
 temp_uploaded.pdf
-
-Python
-
-pycache/
+__pycache__/
 *.pyc
 venv/
 env/
 *.egg-info/
-
-Conda
-
 .env/
-
-IDE
-
 .vscode/
 .idea/
-
