@@ -1,58 +1,51 @@
-# agent.py – Agentic reasoning with local LLM and free tools
-# Uses langgraph's prebuilt ReAct agent (modern replacement for AgentExecutor)
-from langchain_ollama import OllamaLLM
-from langgraph.prebuilt import create_react_agent          # ✅ modern API
-from langchain_core.tools import tool
+# agent.py – Agent using langchain_classic (works with Ollama, no conflicts)
+from langchain_classic.agents import initialize_agent, AgentType
+from langchain_classic.tools import Tool
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from langchain_community.tools import WikipediaQueryRun
 import numexpr as ne
 
+def get_agent(llm, verbose=False):
+    """Build a classic zero‑shot ReAct agent with web search, calculator, and Wikipedia."""
 
-def get_agent(llm, verbose=True):
-    """
-    Build a ReAct agent using langgraph (modern LangChain stack).
-    Returns a compiled graph that behaves like AgentExecutor.
-    """
-
-    # Web search tool (DuckDuckGo – free, no key)
+    # Web search
     search = DuckDuckGoSearchRun()
+    web_search = Tool(
+        name="Web Search",
+        func=search.run,
+        description="useful for finding current information from the internet"
+    )
 
-    @tool
-    def web_search(query: str) -> str:
-        """Search the web for current information. Input should be a search query."""
-        return search.run(query)
-
-    # Calculator tool
-    @tool
+    # Calculator
     def calculator(expression: str) -> str:
-        """Perform mathematical calculations. Input should be a math expression like '2 + 2' or 'sqrt(16)'."""
         try:
-            result = ne.evaluate(expression)
-            return str(result)
+            return str(ne.evaluate(expression))
         except Exception as e:
             return f"Error: {e}"
 
-    # Wikipedia tool
-    wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
+    calculator_tool = Tool(
+        name="Calculator",
+        func=calculator,
+        description="useful for performing mathematical calculations. Input should be a mathematical expression."
+    )
 
-    @tool
-    def wikipedia_search(query: str) -> str:
-        """Look up factual information on Wikipedia. Input should be a search term."""
-        return wikipedia.run(query)
+    # Wikipedia
+    wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
+    wikipedia_search = Tool(
+        name="Wikipedia",
+        func=wikipedia.run,
+        description="useful for looking up facts and summaries from Wikipedia. Input should be a search term."
+    )
 
     tools = [web_search, calculator, wikipedia_search]
 
-    # create_react_agent from langgraph returns a compiled graph
-    agent = create_react_agent(llm, tools)
+    # Create agent with the classic initializer (always works)
+    agent = initialize_agent(
+        tools,
+        llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=verbose,
+        handle_parsing_errors=True
+    )
     return agent
-
-
-def run_agent(agent, input_text: str) -> str:
-    """
-    Helper to invoke the langgraph agent and extract the final text response.
-    Usage: run_agent(agent, "What is the capital of France?")
-    """
-    result = agent.invoke({"messages": [("user", input_text)]})
-    # Last message in the list is the final answer
-    return result["messages"][-1].content

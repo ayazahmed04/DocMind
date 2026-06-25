@@ -1,7 +1,6 @@
 # app.py – Streamlit UI for DocMind (local RAG) + hybrid retrieval & re-ranking
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
 import os
 import streamlit as st
 from document_loader import load_vectorstore
@@ -9,7 +8,9 @@ from llm import get_llm
 from retrieval import build_retriever
 from langchain_classic.chains import RetrievalQA   # keep your working import
 from agent import  get_agent
-
+# feedback_db py for data store in sql 
+from feedback_db import init_db, save_feedback
+init_db()
 # Page config
 st.set_page_config(page_title="DocMind", page_icon="📄", layout="centered")
 st.title("📄 DocMind — Chat with your PDFs")
@@ -35,7 +36,7 @@ if mode == "Simple RAG":
             f.write(uploaded_file.getbuffer())
         pdf_path = "temp_uploaded.pdf"
     else:
-        pdf_path = "paper.pdf"
+        pdf_path = ""
 
     if not os.path.exists(pdf_path):
         st.error("No PDF found. Upload a document or place 'paper.pdf' in the project folder.")
