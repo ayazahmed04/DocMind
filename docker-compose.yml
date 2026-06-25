@@ -1,0 +1,30 @@
+# version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama_data:/root/.ollama  # persist downloaded models
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia   # ignore if you have Nvidia, M1 works with CPU
+              capabilities: [gpu]
+
+  docmind:
+    build: .
+    container_name: docmind
+    ports:
+      - "8501:8501"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434   # tell LangChain where Ollama lives
+    depends_on:
+      - ollama
+    volumes:
+      - ./chroma_ui_db:/app/chroma_ui_db   # persist vector store
+      - ./feedback.db:/app/feedback.db     # persist feedback (optional)
+      - ./paper.pdf:/app/paper.pdf         # optional default PDF
